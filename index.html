@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0b1220">
+<title>Zahnputz-Assistent</title>
+<style>
+  :root{
+    --bg:#0b1220;
+    --bg-panel:#141d2f;
+    --text:#eef2f7;
+    --muted:#8ba0bf;
+    --accent:#38bdf8;
+    --active:#34d399;
+    --active-glow: rgba(52,211,153,.55);
+    --band-fill:#25314a;
+    --band-stroke:#334155;
+    --danger:#f87171;
+    --track:#1c2740;
+  }
+  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body{ height:100%; }
+  body{
+    margin:0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background:var(--bg);
+    color:var(--text);
+    min-height:100dvh;
+    overflow:hidden;
+    overscroll-behavior:none;
+    touch-action:manipulation;
+    -webkit-user-select:none;
+    user-select:none;
+    display:flex;
+    flex-direction:column;
+  }
+  #app{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    min-height:100dvh;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+    position:relative;
+  }
+  header{ padding:18px 20px 4px; text-align:center; }
+  header h1{ margin:0; font-size:1.15rem; font-weight:600; letter-spacing:.02em; }
+
+  #settingsToggle{
+    position:fixed;
+    top: calc(env(safe-area-inset-top) + 14px);
+    right: calc(env(safe-area-inset-right) + 14px);
+    width:44px; height:44px;
+    display:flex; align-items:center; justify-content:center;
+    background:rgba(255,255,255,.06);
+    border:none; border-radius:12px;
+    color:var(--text); font-size:1.3rem;
+    z-index:10; cursor:pointer;
+  }
+
+  main{ flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:12px 20px 28px; position:relative; overflow:hidden; }
+  .screen{ width:100%; max-width:420px; display:flex; flex-direction:column; align-items:center; gap:22px; }
+  .hidden{ display:none !important; }
+
+  .btn{ appearance:none; border:none; border-radius:16px; padding:16px 28px; font-size:1.05rem; font-weight:600; cursor:pointer; color:var(--bg); background:var(--accent); min-width:200px; }
+  .btn:active{ transform:scale(.97); }
+  .btn-primary{ background:var(--active); box-shadow:0 6px 20px var(--active-glow); }
+  .btn-secondary{ background:transparent; color:var(--text); border:1.5px solid var(--band-stroke); }
+  .btn-danger{ background:transparent; color:var(--danger); border:1.5px solid rgba(248,113,113,.4); }
+
+  .controls-row{ display:flex; gap:12px; flex-wrap:wrap; justify-content:center; }
+
+  #totalDurationLabel{ color:var(--muted); font-size:.95rem; text-align:center; }
+  #totalDurationLabel b{ color:var(--text); }
+  .zones-hint{ color:var(--muted); font-size:.85rem; text-align:center; line-height:1.55; max-width:280px; }
+
+  /* Settings */
+  #settingsPanel{ position:absolute; inset:0; background:rgba(6,10,20,.92); backdrop-filter:blur(6px); z-index:20; display:flex; align-items:center; justify-content:center; padding:24px; }
+  .settings-card{ background:var(--bg-panel); border-radius:20px; padding:26px 24px; width:100%; max-width:340px; display:flex; flex-direction:column; gap:18px; }
+  .settings-card h2{ margin:0; font-size:1.1rem; }
+  .field{ display:flex; flex-direction:column; gap:8px; }
+  .field label{ font-size:.9rem; color:var(--muted); }
+  .stepper{ display:flex; align-items:center; gap:14px; }
+  .stepper button{ width:44px; height:44px; border-radius:12px; border:none; background:var(--track); color:var(--text); font-size:1.3rem; cursor:pointer; }
+  .stepper input{ flex:1; text-align:center; font-size:1.3rem; background:transparent; border:none; color:var(--text); font-weight:700; width:60px; }
+  .stepper input::-webkit-outer-spin-button, .stepper input::-webkit-inner-spin-button{ -webkit-appearance:none; margin:0; }
+
+  /* Mouth diagram */
+  .mouth-wrap{ width:100%; max-width:250px; position:relative; }
+  #mouthSvg{ width:100%; height:auto; display:block; overflow:visible; }
+  .band{ fill:var(--band-fill); stroke:var(--band-stroke); stroke-width:1.5; transition:fill .35s ease, filter .35s ease; }
+  .band.active{ fill:var(--active); filter:drop-shadow(0 0 10px var(--active-glow)); animation:bandPulse 1.6s ease-in-out infinite; }
+  @keyframes bandPulse{ 0%,100%{ opacity:1; } 50%{ opacity:.78; } }
+  .jaw-label{ fill:var(--muted); font-size:11px; text-anchor:middle; letter-spacing:.05em; }
+  #brushMarker{ font-size:22px; text-anchor:middle; dominant-baseline:central; filter:drop-shadow(0 2px 6px rgba(0,0,0,.5)); }
+
+  .zone-title{ font-size:1.5rem; font-weight:700; text-align:center; min-height:2.2em; display:flex; align-items:center; justify-content:center; padding:0 10px; }
+
+  .ring-wrap{ position:relative; width:132px; height:132px; }
+  .ring-svg{ width:100%; height:100%; transform:rotate(-90deg); }
+  .ring-bg{ fill:none; stroke:var(--track); stroke-width:10; }
+  .ring-progress{ fill:none; stroke:var(--active); stroke-width:10; stroke-linecap:round; transition:stroke-dashoffset .1s linear; }
+  .ring-number{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:2.4rem; font-weight:700; font-variant-numeric:tabular-nums; }
+
+  .dots{ display:flex; gap:10px; }
+  .dot{ width:10px; height:10px; border-radius:50%; background:var(--track); transition:background .3s, transform .3s; }
+  .dot.done{ background:var(--muted); }
+  .dot.current{ background:var(--active); transform:scale(1.3); box-shadow:0 0 8px var(--active-glow); }
+
+  #activeScreen{ position:relative; }
+  .paused-overlay{ position:absolute; inset:-16px; background:rgba(6,10,20,.75); display:flex; align-items:center; justify-content:center; font-size:1.3rem; font-weight:700; border-radius:20px; z-index:5; }
+
+  .done-emoji{ font-size:3rem; }
+</style>
+</head>
+<body>
+<div id="app">
+  <header><h1>🪥 Zahnputz-Assistent</h1></header>
+
+  <button id="settingsToggle" aria-label="Einstellungen">⚙️</button>
+
+  <main>
+    <section id="idleScreen" class="screen">
+      <div class="mouth-wrap">
+        <svg id="mouthSvgIdle" viewBox="0 0 300 280" style="opacity:.55"></svg>
+      </div>
+      <p id="totalDurationLabel">Gesamtdauer: <b id="totalDurationValue">3:00</b> Minuten</p>
+      <p class="zones-hint">6 Bereiche (Außen-, Innen- &amp; Kauflächen, oben &amp; unten) in zufälliger Reihenfolge, je <span id="hintDuration">30</span> Sekunden.</p>
+      <button id="startBtn" class="btn btn-primary">Start</button>
+    </section>
+
+    <section id="activeScreen" class="screen hidden">
+      <div class="dots" id="dots">
+        <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+        <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+      </div>
+
+      <div class="mouth-wrap">
+        <svg id="mouthSvg" viewBox="0 0 300 280"></svg>
+      </div>
+
+      <div class="zone-title" id="zoneTitle">—</div>
+
+      <div class="ring-wrap">
+        <svg class="ring-svg" viewBox="0 0 120 120">
+          <circle class="ring-bg" cx="60" cy="60" r="54"></circle>
+          <circle class="ring-progress" id="ringProgress" cx="60" cy="60" r="54"></circle>
+        </svg>
+        <div class="ring-number" id="countdownNumber">30</div>
+      </div>
+
+      <div class="controls-row">
+        <button id="pauseBtn" class="btn btn-secondary">Pause</button>
+        <button id="stopBtn" class="btn btn-danger">Abbrechen</button>
+      </div>
+
+      <div class="paused-overlay hidden" id="pausedOverlay">Pausiert</div>
+    </section>
+
+    <section id="doneScreen" class="screen hidden">
+      <div class="done-emoji">🎉</div>
+      <div class="zone-title">Fertig geputzt!</div>
+      <button id="restartBtn" class="btn btn-primary">Nochmal</button>
+    </section>
+  </main>
+
+  <div id="settingsPanel" class="hidden">
+    <div class="settings-card">
+      <h2>Einstellungen</h2>
+      <div class="field">
+        <label for="durationInput">Dauer pro Bereich (Sekunden)</label>
+        <div class="stepper">
+          <button id="decBtn" type="button">−</button>
+          <input id="durationInput" type="number" min="5" max="180" step="5" value="30" inputmode="numeric">
+          <button id="incBtn" type="button">+</button>
+        </div>
+      </div>
+      <button id="closeSettingsBtn" class="btn btn-primary">Fertig</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  var ZONES = [
+    { id:'front-lower', title:'Vorderseite unten',  jaw:'lower', part:'outer' },
+    { id:'front-upper', title:'Vorderseite oben',   jaw:'upper', part:'outer' },
+    { id:'back-lower',  title:'Hinterseite unten',  jaw:'lower', part:'inner' },
+    { id:'back-upper',  title:'Hinterseite oben',   jaw:'upper', part:'inner' },
+    { id:'top-upper',   title:'Obere Fläche oben',  jaw:'upper', part:'chew'  },
+    { id:'top-lower',   title:'Obere Fläche unten', jaw:'lower', part:'chew'  }
+  ];
+
+  var RADII = { inner:[35,50], chew:[50,65], outer:[65,80] };
+  var CX = 150, CY_UPPER = 110, CY_LOWER = 170;
+  var RING_R = 54, RING_CIRC = 2 * Math.PI * RING_R;
+
+  function $(id){ return document.getElementById(id); }
+
+  function polar(cx, cy, r, angleDeg){
+    var rad = angleDeg * Math.PI / 180;
+    return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) };
+  }
+
+  function bandPathD(cx, cy, r1, r2, a1, a2){
+    var pOuterStart = polar(cx, cy, r2, a1);
+    var pOuterEnd   = polar(cx, cy, r2, a2);
+    var pInnerEnd   = polar(cx, cy, r1, a2);
+    var pInnerStart = polar(cx, cy, r1, a1);
+    return [
+      'M', pOuterStart.x, pOuterStart.y,
+      'A', r2, r2, 0, 0, 1, pOuterEnd.x, pOuterEnd.y,
+      'L', pInnerEnd.x, pInnerEnd.y,
+      'A', r1, r1, 0, 0, 0, pInnerStart.x, pInnerStart.y,
+      'Z'
+    ].join(' ');
+  }
+
+  var SVG_NS = 'http://www.w3.org/2000/svg';
+  function svgEl(tag, attrs){
+    var el = document.createElementNS(SVG_NS, tag);
+    for (var k in attrs) el.setAttribute(k, attrs[k]);
+    return el;
+  }
+
+  function buildMouthDiagram(svg, withMarker){
+    while (svg.firstChild) svg.removeChild(svg.firstChild);
+    var jaws = [
+      { jaw:'upper', cy:CY_UPPER, a1:180, a2:360, labelY:16 },
+      { jaw:'lower', cy:CY_LOWER, a1:0,   a2:180, labelY:266 }
+    ];
+    jaws.forEach(function(j){
+      ['outer','chew','inner'].forEach(function(part){
+        var r = RADII[part];
+        var d = bandPathD(CX, j.cy, r[0], r[1], j.a1, j.a2);
+        var path = svgEl('path', { d:d, class:'band', id: (svg.id + '-band-' + j.jaw + '-' + part) });
+        svg.appendChild(path);
+      });
+      var label = svgEl('text', { x:CX, y:j.labelY, class:'jaw-label' });
+      label.textContent = j.jaw === 'upper' ? 'Oberkiefer' : 'Unterkiefer';
+      svg.appendChild(label);
+    });
+    if (withMarker){
+      var marker = svgEl('text', { id:'brushMarker', x:CX, y:CY_UPPER });
+      marker.textContent = '🪥';
+      svg.appendChild(marker);
+    }
+  }
+
+  buildMouthDiagram($('mouthSvgIdle'), false);
+  buildMouthDiagram($('mouthSvg'), true);
+
+  function bandEl(jaw, part){ return $('mouthSvg-band-' + jaw + '-' + part); }
+
+  function setActiveBand(jaw, part){
+    var all = document.querySelectorAll('#mouthSvg .band');
+    for (var i = 0; i < all.length; i++) all[i].classList.remove('active');
+    var el = bandEl(jaw, part);
+    if (el) el.classList.add('active');
+  }
+
+  function updateBrushMarker(jaw, part, fraction){
+    var cy = jaw === 'upper' ? CY_UPPER : CY_LOWER;
+    var a1 = jaw === 'upper' ? 180 : 0;
+    var a2 = jaw === 'upper' ? 360 : 180;
+    var r = RADII[part];
+    var rMid = (r[0] + r[1]) / 2;
+    var t = Math.max(0, Math.min(1, fraction));
+    var angle = a1 + t * (a2 - a1);
+    var p = polar(CX, cy, rMid, angle);
+    var marker = $('brushMarker');
+    marker.setAttribute('x', p.x);
+    marker.setAttribute('y', p.y);
+    marker.setAttribute('transform', 'rotate(' + (angle + 90) + ' ' + p.x + ' ' + p.y + ')');
+  }
+
+  var ringProgress = $('ringProgress');
+  ringProgress.style.strokeDasharray = RING_CIRC;
+  ringProgress.style.strokeDashoffset = 0;
+
+  function fmtMinSec(totalSeconds){
+    var m = Math.floor(totalSeconds / 60);
+    var s = totalSeconds % 60;
+    return m + ':' + (s < 10 ? '0' + s : s);
+  }
+
+  function shuffle(arr){
+    for (var i = arr.length - 1; i > 0; i--){
+      var j = Math.floor(Math.random() * (i + 1));
+      var tmp = arr[i]; arr[i] = arr[j]; arr[j] = tmp;
+    }
+    return arr;
+  }
+
+  // ---- Settings ----
+  var durationInput = $('durationInput');
+  var duration = 30;
+  try {
+    var saved = localStorage.getItem('zahnputz_duration');
+    if (saved) duration = parseInt(saved, 10) || 30;
+  } catch (e) {}
+
+  function clampDuration(v){
+    v = Math.round(v / 5) * 5;
+    if (v < 5) v = 5;
+    if (v > 180) v = 180;
+    return v;
+  }
+
+  function applyDuration(v){
+    duration = clampDuration(v);
+    durationInput.value = duration;
+    $('totalDurationValue').textContent = fmtMinSec(duration * 6);
+    $('hintDuration').textContent = duration;
+    try { localStorage.setItem('zahnputz_duration', String(duration)); } catch (e) {}
+  }
+  applyDuration(duration);
+
+  durationInput.addEventListener('change', function(){
+    applyDuration(parseInt(durationInput.value, 10) || 30);
+  });
+  $('decBtn').addEventListener('click', function(){ applyDuration(duration - 5); });
+  $('incBtn').addEventListener('click', function(){ applyDuration(duration + 5); });
+
+  $('settingsToggle').addEventListener('click', function(){ $('settingsPanel').classList.remove('hidden'); });
+  $('closeSettingsBtn').addEventListener('click', function(){ $('settingsPanel').classList.add('hidden'); });
+
+  // ---- Screens ----
+  function showScreen(name){
+    ['idleScreen','activeScreen','doneScreen'].forEach(function(id){
+      $(id).classList.toggle('hidden', id !== name);
+    });
+    $('settingsToggle').style.display = (name === 'idleScreen') ? 'flex' : 'none';
+  }
+  showScreen('idleScreen');
+
+  // ---- Feedback helpers ----
+  function vibrate(pattern){
+    if (navigator.vibrate) { try { navigator.vibrate(pattern); } catch (e) {} }
+  }
+
+  var audioCtx = null;
+  function ensureAudioCtx(){
+    if (!audioCtx){
+      try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {}
+    } else if (audioCtx.state === 'suspended'){
+      audioCtx.resume();
+    }
+  }
+  function playBeep(){
+    if (!audioCtx) return;
+    try {
+      var osc = audioCtx.createOscillator();
+      var gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = 880;
+      gain.gain.setValueAtTime(0.0001, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.15, audioCtx.currentTime + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.28);
+      osc.connect(gain).connect(audioCtx.destination);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.3);
+    } catch (e) {}
+  }
+
+  var wakeLock = null;
+  function requestWakeLock(){
+    if ('wakeLock' in navigator){
+      navigator.wakeLock.request('screen').then(function(wl){ wakeLock = wl; }).catch(function(){ wakeLock = null; });
+    }
+  }
+  function releaseWakeLock(){
+    if (wakeLock){ wakeLock.release().catch(function(){}); wakeLock = null; }
+  }
+  document.addEventListener('visibilitychange', function(){
+    if (document.visibilityState === 'visible' && state.running && !state.paused) requestWakeLock();
+  });
+
+  // ---- Session state ----
+  var state = {
+    order: [], index: 0, duration: 30, elapsed: 0,
+    paused: false, running: false, lastTs: null
+  };
+  var rafId = null;
+
+  var dotsEls = document.querySelectorAll('#dots .dot');
+
+  function resetDots(){
+    dotsEls.forEach(function(d){ d.classList.remove('done', 'current'); });
+  }
+  function updateDots(){
+    dotsEls.forEach(function(d, i){
+      d.classList.toggle('done', i < state.index);
+      d.classList.toggle('current', i === state.index);
+    });
+  }
+
+  function enterZone(){
+    var zone = state.order[state.index];
+    $('zoneTitle').textContent = zone.title;
+    setActiveBand(zone.jaw, zone.part);
+    updateDots();
+    vibrate(120);
+    playBeep();
+    renderTick();
+  }
+
+  function renderTick(){
+    var remaining = Math.max(0, state.duration - state.elapsed);
+    $('countdownNumber').textContent = Math.ceil(remaining);
+    var frac = Math.min(1, state.elapsed / state.duration);
+    ringProgress.style.strokeDashoffset = RING_CIRC * frac;
+    var zone = state.order[state.index];
+    updateBrushMarker(zone.jaw, zone.part, frac);
+  }
+
+  function advanceZone(){
+    state.index++;
+    if (state.index >= state.order.length){
+      finishSession();
+      return;
+    }
+    state.elapsed = 0;
+    enterZone();
+  }
+
+  function loop(ts){
+    if (!state.running) return;
+    if (state.paused){
+      state.lastTs = ts;
+      rafId = requestAnimationFrame(loop);
+      return;
+    }
+    if (state.lastTs === null) state.lastTs = ts;
+    var dt = (ts - state.lastTs) / 1000;
+    state.lastTs = ts;
+    state.elapsed += dt;
+    if (state.elapsed >= state.duration){
+      advanceZone();
+    } else {
+      renderTick();
+    }
+    if (state.running) rafId = requestAnimationFrame(loop);
+  }
+
+  function startSession(){
+    ensureAudioCtx();
+    state.duration = duration;
+    state.order = shuffle(ZONES.slice());
+    state.index = 0;
+    state.elapsed = 0;
+    state.paused = false;
+    state.lastTs = null;
+    state.running = true;
+    $('pauseBtn').textContent = 'Pause';
+    $('pausedOverlay').classList.add('hidden');
+    resetDots();
+    showScreen('activeScreen');
+    enterZone();
+    requestWakeLock();
+    rafId = requestAnimationFrame(loop);
+  }
+
+  function stopSession(){
+    state.running = false;
+    if (rafId) cancelAnimationFrame(rafId);
+    releaseWakeLock();
+    showScreen('idleScreen');
+  }
+
+  function finishSession(){
+    state.running = false;
+    if (rafId) cancelAnimationFrame(rafId);
+    releaseWakeLock();
+    vibrate([100, 60, 100, 60, 200]);
+    playBeep();
+    showScreen('doneScreen');
+  }
+
+  function togglePause(){
+    state.paused = !state.paused;
+    $('pauseBtn').textContent = state.paused ? 'Weiter' : 'Pause';
+    $('pausedOverlay').classList.toggle('hidden', !state.paused);
+    if (!state.paused) state.lastTs = null;
+  }
+
+  $('startBtn').addEventListener('click', startSession);
+  $('pauseBtn').addEventListener('click', togglePause);
+  $('stopBtn').addEventListener('click', stopSession);
+  $('restartBtn').addEventListener('click', startSession);
+})();
+</script>
+</body>
+</html>
