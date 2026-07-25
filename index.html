@@ -6,7 +6,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Zahnputz">
-<meta name="theme-color" content="#0b1220">
+<meta name="theme-color" content="#000000">
+<meta name="color-scheme" content="dark">
 <meta name="mobile-web-app-capable" content="yes">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-180.png">
@@ -15,25 +16,24 @@
 <title>Zahnputz-Assistent</title>
 <style>
   :root{
-    --bg:#0b1220;
-    --bg-panel:#141d2f;
-    --text:#eef2f7;
-    --muted:#8ba0bf;
-    --accent:#38bdf8;
-    --active:#34d399;
-    --active-glow: rgba(52,211,153,.55);
-    --band-fill:#25314a;
-    --band-stroke:#334155;
-    --danger:#f87171;
-    --track:#1c2740;
+    --bg:#000000;
+    --card:#1c1c1e;
+    --card2:#2c2c2e;
+    --label:#ffffff;
+    --label2:rgba(235,235,245,.60);
+    --label3:rgba(235,235,245,.30);
+    --separator:rgba(84,84,88,.65);
+    --fill:rgba(120,120,128,.24);
+    --accent:#30d158;
+    --accent-text:#ffffff;
   }
   *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
   html,body{ height:100%; }
   body{
     margin:0;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", system-ui, sans-serif;
     background:var(--bg);
-    color:var(--text);
+    color:var(--label);
     min-height:100dvh;
     overflow:hidden;
     overscroll-behavior:none;
@@ -49,143 +49,197 @@
     flex-direction:column;
     min-height:100dvh;
     padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
-    position:relative;
   }
-  header{ padding:18px 20px 4px; text-align:center; }
-  header h1{ margin:0; font-size:1.15rem; font-weight:600; letter-spacing:.02em; }
-
-  #settingsToggle{
-    position:fixed;
-    top: calc(env(safe-area-inset-top) + 14px);
-    right: calc(env(safe-area-inset-right) + 14px);
-    width:44px; height:44px;
-    display:flex; align-items:center; justify-content:center;
-    background:rgba(255,255,255,.06);
-    border:none; border-radius:12px;
-    color:var(--text); font-size:1.3rem;
-    z-index:10; cursor:pointer;
-  }
-
-  main{ flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:12px 20px 28px; position:relative; overflow:hidden; }
-  .screen{ width:100%; max-width:420px; display:flex; flex-direction:column; align-items:center; gap:22px; }
   .hidden{ display:none !important; }
 
-  .btn{ appearance:none; border:none; border-radius:16px; padding:16px 28px; font-size:1.05rem; font-weight:600; cursor:pointer; color:var(--bg); background:var(--accent); min-width:200px; }
-  .btn:active{ transform:scale(.97); }
-  .btn-primary{ background:var(--active); box-shadow:0 6px 20px var(--active-glow); }
-  .btn-secondary{ background:transparent; color:var(--text); border:1.5px solid var(--band-stroke); }
-  .btn-danger{ background:transparent; color:var(--danger); border:1.5px solid rgba(248,113,113,.4); }
+  main{ flex:1; display:flex; flex-direction:column; overflow:hidden; padding:0 20px calc(14px + env(safe-area-inset-bottom)); }
+  .screen{ flex:1; width:100%; max-width:480px; margin:0 auto; display:flex; flex-direction:column; min-height:0; }
+  #activeScreen, #doneScreen{ justify-content:center; align-items:center; gap:20px; }
 
-  .controls-row{ display:flex; gap:12px; flex-wrap:wrap; justify-content:center; }
+  /* Large title nav (idle screen only) */
+  .nav-row{ display:flex; align-items:center; justify-content:space-between; padding:10px 2px 18px; flex-shrink:0; }
+  .large-title{ font-size:34px; font-weight:700; letter-spacing:.37px; margin:0; }
+  .icon-btn{ width:34px; height:34px; border-radius:50%; border:none; background:var(--fill); color:var(--accent); display:flex; align-items:center; justify-content:center; padding:0; }
+  .icon-btn svg{ width:18px; height:18px; }
+  .icon-btn:active{ opacity:.6; }
 
-  #totalDurationLabel{ color:var(--muted); font-size:.95rem; text-align:center; }
-  #totalDurationLabel b{ color:var(--text); }
-  .zones-hint{ color:var(--muted); font-size:.85rem; text-align:center; line-height:1.55; max-width:280px; }
+  /* Cards / grouped list */
+  .card{ background:var(--card); border-radius:14px; overflow:hidden; flex-shrink:0; }
+  .list-row{ display:flex; align-items:center; justify-content:space-between; padding:13px 16px; gap:12px; }
+  .list-row + .list-row{ border-top:0.5px solid var(--separator); }
+  .row-label{ font-size:17px; color:var(--label); }
+  .row-value{ font-size:17px; color:var(--label2); }
 
-  /* Settings */
-  #settingsPanel{ position:absolute; inset:0; background:rgba(6,10,20,.92); backdrop-filter:blur(6px); z-index:20; display:flex; align-items:center; justify-content:center; padding:24px; }
-  .settings-card{ background:var(--bg-panel); border-radius:20px; padding:26px 24px; width:100%; max-width:340px; display:flex; flex-direction:column; gap:18px; }
-  .settings-card h2{ margin:0; font-size:1.1rem; }
-  .field{ display:flex; flex-direction:column; gap:8px; }
-  .field label{ font-size:.9rem; color:var(--muted); }
-  .stepper{ display:flex; align-items:center; gap:14px; }
-  .stepper button{ width:44px; height:44px; border-radius:12px; border:none; background:var(--track); color:var(--text); font-size:1.3rem; cursor:pointer; }
-  .stepper input{ flex:1; text-align:center; font-size:1.3rem; background:transparent; border:none; color:var(--text); font-weight:700; width:60px; }
-  .stepper input::-webkit-outer-spin-button, .stepper input::-webkit-inner-spin-button{ -webkit-appearance:none; margin:0; }
+  .footnote{ font-size:13px; color:var(--label2); line-height:1.45; padding:8px 6px 0; }
+
+  .spacer{ flex:1 1 auto; }
+
+  /* Buttons */
+  .btn{ appearance:none; border:none; border-radius:14px; padding:16px; font-size:17px; font-weight:600; cursor:pointer; width:100%; }
+  .btn:active{ opacity:.75; }
+  .btn-primary{ background:var(--accent); color:var(--accent-text); }
+
+  .idle-cta{ flex-shrink:0; padding-bottom:6px; }
 
   /* Mouth diagram */
-  .mouth-wrap{ width:100%; max-width:250px; position:relative; }
-  #mouthSvg{ width:100%; height:auto; display:block; overflow:visible; }
-  .band{ fill:var(--band-fill); stroke:var(--band-stroke); stroke-width:1.5; transition:fill .35s ease, filter .35s ease; }
-  .band.active{ fill:var(--active); filter:drop-shadow(0 0 10px var(--active-glow)); animation:bandPulse 1.6s ease-in-out infinite; }
-  @keyframes bandPulse{ 0%,100%{ opacity:1; } 50%{ opacity:.78; } }
-  .jaw-label{ fill:var(--muted); font-size:11px; text-anchor:middle; letter-spacing:.05em; }
-  #brushMarker{ font-size:22px; text-anchor:middle; dominant-baseline:central; filter:drop-shadow(0 2px 6px rgba(0,0,0,.5)); }
+  .mouth-card{ width:100%; max-width:230px; padding:14px 6px 6px; display:flex; justify-content:center; }
+  #mouthSvgIdle{ opacity:.6; }
+  #mouthSvg, #mouthSvgIdle{ width:100%; height:auto; display:block; overflow:visible; }
+  .band{ fill:var(--fill); stroke:var(--separator); stroke-width:1; transition:fill .35s ease; }
+  .band.active{ fill:var(--accent); animation:bandPulse 1.8s ease-in-out infinite; }
+  .is-paused .band.active{ animation-play-state:paused; opacity:1; }
+  @keyframes bandPulse{ 0%,100%{ opacity:1; } 50%{ opacity:.82; } }
+  .jaw-label{ fill:var(--label3); font-size:11px; text-anchor:middle; letter-spacing:.05em; }
 
-  .zone-title{ font-size:1.5rem; font-weight:700; text-align:center; min-height:2.2em; display:flex; align-items:center; justify-content:center; padding:0 10px; }
+  .marker-halo{ fill:#fff; opacity:.4; animation:markerPulse 1.8s ease-out infinite; transform-box:fill-box; transform-origin:center; }
+  .is-paused .marker-halo{ animation-play-state:paused; opacity:0; }
+  .marker-dot{ fill:#fff; stroke:var(--accent); stroke-width:2.5; }
+  @keyframes markerPulse{ 0%{ transform:scale(.5); opacity:.5; } 70%{ transform:scale(2.4); opacity:0; } 100%{ opacity:0; } }
 
-  .ring-wrap{ position:relative; width:132px; height:132px; }
+  .zone-title{ font-size:22px; font-weight:700; text-align:center; min-height:1.4em; padding:0 10px; }
+
+  .paused-pill{ display:inline-flex; align-items:center; gap:6px; padding:5px 14px; border-radius:20px; background:var(--fill); color:var(--label2); font-size:13px; font-weight:600; letter-spacing:.02em; }
+
+  .ring-wrap{ position:relative; width:150px; height:150px; }
   .ring-svg{ width:100%; height:100%; transform:rotate(-90deg); }
-  .ring-bg{ fill:none; stroke:var(--track); stroke-width:10; }
-  .ring-progress{ fill:none; stroke:var(--active); stroke-width:10; stroke-linecap:round; transition:stroke-dashoffset .1s linear; }
-  .ring-number{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:2.4rem; font-weight:700; font-variant-numeric:tabular-nums; }
+  .ring-bg{ fill:none; stroke:var(--fill); stroke-width:9; }
+  .ring-progress{ fill:none; stroke:var(--accent); stroke-width:9; stroke-linecap:round; transition:stroke-dashoffset .1s linear; }
+  .ring-number{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:52px; font-weight:300; font-variant-numeric:tabular-nums; letter-spacing:-1px; }
 
-  .dots{ display:flex; gap:10px; }
-  .dot{ width:10px; height:10px; border-radius:50%; background:var(--track); transition:background .3s, transform .3s; }
-  .dot.done{ background:var(--muted); }
-  .dot.current{ background:var(--active); transform:scale(1.3); box-shadow:0 0 8px var(--active-glow); }
+  .dots{ display:flex; gap:7px; flex-shrink:0; }
+  .dot{ width:6px; height:6px; border-radius:50%; background:var(--card2); transition:background .3s, transform .3s; }
+  .dot.done{ background:var(--label3); }
+  .dot.current{ background:var(--accent); transform:scale(1.5); }
 
-  .dimmable{ position:relative; display:flex; flex-direction:column; align-items:center; gap:22px; }
-  .paused-overlay{ position:absolute; inset:-16px; background:rgba(6,10,20,.75); display:flex; align-items:center; justify-content:center; font-size:1.3rem; font-weight:700; border-radius:20px; z-index:5; pointer-events:none; }
+  /* Session controls (Clock-app style circular buttons) */
+  .session-controls{ display:flex; justify-content:center; gap:30px; flex-shrink:0; }
+  .circle-btn{ width:82px; height:82px; border-radius:50%; border:none; font-size:15px; font-weight:500; display:flex; align-items:center; justify-content:center; text-align:center; }
+  .circle-btn:active{ opacity:.8; }
+  .circle-btn.neutral{ background:var(--card2); color:var(--label); }
+  .circle-btn.accent{ background:var(--accent); color:var(--accent-text); }
 
-  .done-emoji{ font-size:3rem; }
+  /* Done screen */
+  .check-circle{ color:var(--accent); }
+  .check-circle svg{ width:72px; height:72px; }
+  .done-subtitle{ font-size:15px; color:var(--label2); margin-top:-10px; }
+
+  /* Settings sheet */
+  #settingsPanel{ position:fixed; inset:0; z-index:30; }
+  .sheet-backdrop{ position:absolute; inset:0; background:rgba(0,0,0,.5); }
+  .sheet{ position:absolute; left:0; right:0; bottom:0; background:var(--bg); border-radius:20px 20px 0 0; padding:8px 16px calc(18px + env(safe-area-inset-bottom)); max-height:80vh; overflow:auto; }
+  .sheet-grabber{ width:36px; height:5px; border-radius:3px; background:var(--card2); margin:6px auto 12px; }
+  .sheet-nav{ position:relative; display:flex; align-items:center; justify-content:center; padding:2px 0 16px; }
+  .sheet-title{ font-size:17px; font-weight:600; }
+  .sheet-done-btn{ position:absolute; right:0; background:none; border:none; color:var(--accent); font-size:17px; font-weight:600; padding:4px 0; }
+  .sheet-done-btn:active{ opacity:.6; }
+
+  .stepper-row .row-right{ display:flex; align-items:center; gap:10px; }
+  .stepper-capsule{ display:flex; align-items:center; background:var(--card2); border-radius:8px; overflow:hidden; }
+  .stepper-capsule button{ width:32px; height:30px; border:none; background:transparent; color:var(--accent); font-size:19px; font-weight:600; line-height:1; padding:0; }
+  .stepper-capsule button:active{ background:rgba(255,255,255,.08); }
+  .stepper-capsule .stepper-divider{ width:1px; align-self:stretch; background:var(--separator); }
+  #durationInput{ background:transparent; border:none; color:var(--label2); font-size:17px; text-align:right; width:34px; padding:0; -moz-appearance:textfield; }
+  #durationInput::-webkit-outer-spin-button, #durationInput::-webkit-inner-spin-button{ -webkit-appearance:none; margin:0; }
 </style>
 </head>
 <body>
 <div id="app">
-  <header><h1>🪥 Zahnputz-Assistent</h1></header>
-
-  <button id="settingsToggle" aria-label="Einstellungen">⚙️</button>
-
   <main>
     <section id="idleScreen" class="screen">
-      <div class="mouth-wrap">
-        <svg id="mouthSvgIdle" viewBox="0 0 300 280" style="opacity:.55"></svg>
+      <div class="nav-row">
+        <h1 class="large-title">Zahnputz</h1>
+        <button id="settingsToggle" class="icon-btn" aria-label="Einstellungen">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <circle cx="12" cy="12" r="7.2" stroke-dasharray="2.1 2.4"></circle>
+            <circle cx="12" cy="12" r="2.6"></circle>
+          </svg>
+        </button>
       </div>
-      <p id="totalDurationLabel">Gesamtdauer: <b id="totalDurationValue">3:00</b> Minuten</p>
-      <p class="zones-hint">6 Bereiche (Außen-, Innen- &amp; Kauflächen, oben &amp; unten) in zufälliger Reihenfolge, je <span id="hintDuration">30</span> Sekunden.</p>
-      <button id="startBtn" class="btn btn-primary">Start</button>
+
+      <div class="card mouth-card">
+        <svg id="mouthSvgIdle" viewBox="0 0 300 280"></svg>
+      </div>
+
+      <div style="height:16px"></div>
+
+      <div class="card">
+        <div class="list-row">
+          <span class="row-label">Gesamtdauer</span>
+          <span class="row-value" id="totalDurationValue">3:00</span>
+        </div>
+      </div>
+      <p class="footnote">6 Bereiche (Außen-, Innen- &amp; Kauflächen, oben &amp; unten) in zufälliger Reihenfolge, je <span id="hintDuration">30</span> Sekunden.</p>
+
+      <div class="spacer"></div>
+
+      <div class="idle-cta">
+        <button id="startBtn" class="btn btn-primary">Start</button>
+      </div>
     </section>
 
     <section id="activeScreen" class="screen hidden">
-      <div class="dimmable" id="dimmable">
-        <div class="dots" id="dots">
-          <span class="dot"></span><span class="dot"></span><span class="dot"></span>
-          <span class="dot"></span><span class="dot"></span><span class="dot"></span>
-        </div>
-
-        <div class="mouth-wrap">
-          <svg id="mouthSvg" viewBox="0 0 300 280"></svg>
-        </div>
-
-        <div class="zone-title" id="zoneTitle">—</div>
-
-        <div class="ring-wrap">
-          <svg class="ring-svg" viewBox="0 0 120 120">
-            <circle class="ring-bg" cx="60" cy="60" r="54"></circle>
-            <circle class="ring-progress" id="ringProgress" cx="60" cy="60" r="54"></circle>
-          </svg>
-          <div class="ring-number" id="countdownNumber">30</div>
-        </div>
-
-        <div class="paused-overlay hidden" id="pausedOverlay">Pausiert</div>
+      <div class="dots" id="dots">
+        <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+        <span class="dot"></span><span class="dot"></span><span class="dot"></span>
       </div>
 
-      <div class="controls-row">
-        <button id="pauseBtn" class="btn btn-secondary">Pause</button>
-        <button id="stopBtn" class="btn btn-danger">Abbrechen</button>
+      <div class="card mouth-card">
+        <svg id="mouthSvg" viewBox="0 0 300 280"></svg>
+      </div>
+
+      <div class="zone-title" id="zoneTitle">—</div>
+      <div class="paused-pill hidden" id="pausedOverlay">Pausiert</div>
+
+      <div class="ring-wrap">
+        <svg class="ring-svg" viewBox="0 0 120 120">
+          <circle class="ring-bg" cx="60" cy="60" r="54"></circle>
+          <circle class="ring-progress" id="ringProgress" cx="60" cy="60" r="54"></circle>
+        </svg>
+        <div class="ring-number" id="countdownNumber">30</div>
+      </div>
+
+      <div class="session-controls">
+        <button id="stopBtn" class="circle-btn neutral">Abbrechen</button>
+        <button id="pauseBtn" class="circle-btn accent">Pause</button>
       </div>
     </section>
 
     <section id="doneScreen" class="screen hidden">
-      <div class="done-emoji">🎉</div>
+      <div class="check-circle">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"></circle>
+          <path d="M8 12.3l2.6 2.6L16 9.3"></path>
+        </svg>
+      </div>
       <div class="zone-title">Fertig geputzt!</div>
-      <button id="restartBtn" class="btn btn-primary">Nochmal</button>
+      <div class="done-subtitle">Gut gemacht.</div>
+      <div style="height:8px"></div>
+      <button id="restartBtn" class="btn btn-primary" style="width:auto; padding:16px 32px;">Nochmal</button>
     </section>
   </main>
 
   <div id="settingsPanel" class="hidden">
-    <div class="settings-card">
-      <h2>Einstellungen</h2>
-      <div class="field">
-        <label for="durationInput">Dauer pro Bereich (Sekunden)</label>
-        <div class="stepper">
-          <button id="decBtn" type="button">−</button>
-          <input id="durationInput" type="number" min="5" max="180" step="5" value="30" inputmode="numeric">
-          <button id="incBtn" type="button">+</button>
+    <div class="sheet-backdrop" id="sheetBackdrop"></div>
+    <div class="sheet">
+      <div class="sheet-grabber"></div>
+      <div class="sheet-nav">
+        <span class="sheet-title">Einstellungen</span>
+        <button id="closeSettingsBtn" class="sheet-done-btn">Fertig</button>
+      </div>
+      <div class="card">
+        <div class="list-row stepper-row">
+          <span class="row-label">Dauer pro Bereich</span>
+          <div class="row-right">
+            <input id="durationInput" type="number" min="5" max="180" step="5" value="30" inputmode="numeric"> <span class="row-value">s</span>
+            <div class="stepper-capsule">
+              <button id="decBtn" type="button" aria-label="Weniger">−</button>
+              <div class="stepper-divider"></div>
+              <button id="incBtn" type="button" aria-label="Mehr">+</button>
+            </div>
+          </div>
         </div>
       </div>
-      <button id="closeSettingsBtn" class="btn btn-primary">Fertig</button>
+      <p class="footnote">Standard: 30 Sekunden pro Bereich.</p>
     </div>
   </div>
 </div>
@@ -253,8 +307,9 @@
       svg.appendChild(label);
     });
     if (withMarker){
-      var marker = svgEl('text', { id:'brushMarker', x:CX, y:CY_UPPER });
-      marker.textContent = '🪥';
+      var marker = svgEl('g', { id:'brushMarker' });
+      marker.appendChild(svgEl('circle', { class:'marker-halo', r:12 }));
+      marker.appendChild(svgEl('circle', { class:'marker-dot', r:6 }));
       svg.appendChild(marker);
     }
   }
@@ -281,9 +336,7 @@
     var angle = a1 + t * (a2 - a1);
     var p = polar(CX, cy, rMid, angle);
     var marker = $('brushMarker');
-    marker.setAttribute('x', p.x);
-    marker.setAttribute('y', p.y);
-    marker.setAttribute('transform', 'rotate(' + (angle + 90) + ' ' + p.x + ' ' + p.y + ')');
+    marker.setAttribute('transform', 'translate(' + p.x + ' ' + p.y + ')');
   }
 
   var ringProgress = $('ringProgress');
@@ -336,13 +389,13 @@
 
   $('settingsToggle').addEventListener('click', function(){ $('settingsPanel').classList.remove('hidden'); });
   $('closeSettingsBtn').addEventListener('click', function(){ $('settingsPanel').classList.add('hidden'); });
+  $('sheetBackdrop').addEventListener('click', function(){ $('settingsPanel').classList.add('hidden'); });
 
   // ---- Screens ----
   function showScreen(name){
     ['idleScreen','activeScreen','doneScreen'].forEach(function(id){
       $(id).classList.toggle('hidden', id !== name);
     });
-    $('settingsToggle').style.display = (name === 'idleScreen') ? 'flex' : 'none';
   }
   showScreen('idleScreen');
 
@@ -466,6 +519,7 @@
     state.running = true;
     $('pauseBtn').textContent = 'Pause';
     $('pausedOverlay').classList.add('hidden');
+    $('activeScreen').classList.remove('is-paused');
     resetDots();
     showScreen('activeScreen');
     enterZone();
@@ -493,6 +547,7 @@
     state.paused = !state.paused;
     $('pauseBtn').textContent = state.paused ? 'Weiter' : 'Pause';
     $('pausedOverlay').classList.toggle('hidden', !state.paused);
+    $('activeScreen').classList.toggle('is-paused', state.paused);
     if (!state.paused) state.lastTs = null;
   }
 
