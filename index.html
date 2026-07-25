@@ -87,6 +87,7 @@
   #mouthSvgIdle{ opacity:.6; }
   #mouthSvg, #mouthSvgIdle{ width:100%; height:auto; display:block; overflow:visible; }
   .band{ fill:var(--fill); stroke:var(--separator); stroke-width:1; transition:fill .35s ease; }
+  .band.done{ fill:var(--label2); }
   .band.active{ fill:var(--accent); animation:bandPulse 1.8s ease-in-out infinite; }
   .is-paused .band.active{ animation-play-state:paused; opacity:1; }
   @keyframes bandPulse{ 0%,100%{ opacity:1; } 50%{ opacity:.82; } }
@@ -320,10 +321,16 @@
 
   function bandEl(jaw, part){ return $('mouthSvg-band-' + jaw + '-' + part); }
 
-  function setActiveBand(jaw, part){
+  function updateBandStates(){
     var all = document.querySelectorAll('#mouthSvg .band');
-    for (var i = 0; i < all.length; i++) all[i].classList.remove('active');
-    var el = bandEl(jaw, part);
+    for (var i = 0; i < all.length; i++) all[i].classList.remove('active', 'done');
+    for (var i = 0; i < state.index; i++){
+      var doneZone = state.order[i];
+      var doneEl = bandEl(doneZone.jaw, doneZone.part);
+      if (doneEl) doneEl.classList.add('done');
+    }
+    var current = state.order[state.index];
+    var el = bandEl(current.jaw, current.part);
     if (el) el.classList.add('active');
   }
 
@@ -464,7 +471,7 @@
   function enterZone(){
     var zone = state.order[state.index];
     $('zoneTitle').textContent = zone.title;
-    setActiveBand(zone.jaw, zone.part);
+    updateBandStates();
     updateDots();
     vibrate(120);
     playBeep();
