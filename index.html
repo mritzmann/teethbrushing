@@ -54,7 +54,8 @@
 
   main{ flex:1; display:flex; flex-direction:column; overflow:hidden; padding:0 20px calc(14px + env(safe-area-inset-bottom)); }
   .screen{ flex:1; width:100%; max-width:480px; margin:0 auto; display:flex; flex-direction:column; min-height:0; }
-  #activeScreen, #doneScreen{ justify-content:center; align-items:center; gap:20px; }
+  #activeScreen{ justify-content:space-between; align-items:center; padding:10px 0 24px; }
+  #doneScreen{ justify-content:center; align-items:center; gap:20px; }
 
   /* Large title nav (idle screen only) */
   .nav-row{ display:flex; align-items:center; justify-content:space-between; padding:10px 2px 18px; flex-shrink:0; }
@@ -82,7 +83,7 @@
   .idle-cta{ flex-shrink:0; padding-bottom:6px; }
 
   /* Mouth diagram */
-  .mouth-card{ width:100%; max-width:230px; padding:14px 6px 6px; display:flex; justify-content:center; }
+  .mouth-card{ width:100%; max-width:270px; padding:16px 8px 8px; display:flex; justify-content:center; }
   #mouthSvgIdle{ opacity:.6; }
   #mouthSvg, #mouthSvgIdle{ width:100%; height:auto; display:block; overflow:visible; }
   .band{ fill:var(--fill); stroke:var(--separator); stroke-width:1; transition:fill .35s ease; }
@@ -100,7 +101,7 @@
 
   .paused-pill{ display:inline-flex; align-items:center; gap:6px; padding:5px 14px; border-radius:20px; background:var(--fill); color:var(--label2); font-size:13px; font-weight:600; letter-spacing:.02em; }
 
-  .ring-wrap{ position:relative; width:150px; height:150px; }
+  .ring-wrap{ position:relative; width:180px; height:180px; }
   .ring-svg{ width:100%; height:100%; transform:rotate(-90deg); }
   .ring-bg{ fill:none; stroke:var(--fill); stroke-width:9; }
   .ring-progress{ fill:none; stroke:var(--accent); stroke-width:9; stroke-linecap:round; transition:stroke-dashoffset .1s linear; }
